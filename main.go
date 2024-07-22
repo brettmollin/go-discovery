@@ -17,18 +17,6 @@ import (
 // to not be rate limited connect to your own node and list IP ad admin in rippled.cfg
 const ServerUrl = "wss://s.altnet.rippletest.net:51233/"
 
-type SubmitRequest struct {
-	TxBlob   string `json:"tx_blob"`
-	FailHard bool   `json:"fail_hard,omitempty"`
-}
-
-func (SubmitRequest) Validate() error {
-	return nil
-}
-func (SubmitRequest) Method() string {
-	return "submit"
-}
-
 /**
  * Example to send a payment
  */
@@ -58,30 +46,26 @@ func main() {
 	DestinationAddress := destination_account["account"].(map[string]interface{})["address"].(string)
 
 	tx := map[string]any{
-		"Account":         address,
-		"TransactionType": "Payment",
-		"Amount":          "20",
-		"Destination":     DestinationAddress,
-		"Flags":           0,
-		"Fee":             "12", //TODO: get live fee from the ledger
-		"Sequence":        int(acr.AccountData.Sequence),
-		"SigningPubKey":   pubKey,
+		"Account":            address,
+		"TransactionType":    "Payment",
+		"Amount":             "20",
+		"Destination":        DestinationAddress,
+		"Flags":              0,
+		"Fee":                "12", //TODO: get live fee from the ledger
+		"Sequence":           int(acr.AccountData.Sequence),
+		"LastLedgerSequence": int(acr.LedgerCurrentIndex + 3),
+		"SigningPubKey":      pubKey,
 	}
-
+	//print the transaction
+	fmt.Println(tx)
 	// Sign the transaction
 	signedTx := utils.SignTx(sender_account, tx)
 
-	// Create a new websocket client to connect to the server
-	ws := websocket.NewWebsocketClient(&websocket.WebsocketConfig{
-		URL: ServerUrl,
-	})
-
 	// Send the signed transaction to the server for submission
-	res, _ := ws.SendRequest(
-		SubmitRequest{
-			signedTx,
-			false,
-		})
-
-	fmt.Println("Tx Result", res)
+	result, err := utils.SubmitTransaction(ServerUrl, signedTx)
+	if err != nil {
+		fmt.Println("Error submitting transaction:", err)
+		return
+	}
+	fmt.Println(result)
 }
