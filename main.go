@@ -1,11 +1,9 @@
 package main
 
 import (
-	"encoding/hex"
 	"fmt"
 	"go-discovery/first-app/utils"
 
-	binarycodec "github.com/xyield/xrpl-go/binary-codec"
 	"github.com/xyield/xrpl-go/client/websocket"
 	"github.com/xyield/xrpl-go/keypairs"
 	"github.com/xyield/xrpl-go/model/client/account"
@@ -50,11 +48,11 @@ func main() {
 		panic(err)
 	}
 	// Print the seeds for the sender and destination accounts
-	fmt.Println("private key for sender", sender_account["seed"].(string))
-	fmt.Println("private key for destination", destination_account["seed"].(string))
+	fmt.Println("seed for sender", sender_account["seed"].(string))
+	fmt.Println("seed for destination", destination_account["seed"].(string))
 
 	// Get the private and public keys from the seed
-	privKey, pubKey, _ := keypairs.DeriveKeypair(sender_account["seed"].(string), false)
+	_, pubKey, _ := keypairs.DeriveKeypair(sender_account["seed"].(string), false)
 
 	// Get the distintion address
 	DestinationAddress := destination_account["account"].(map[string]interface{})["address"].(string)
@@ -69,32 +67,14 @@ func main() {
 		"Sequence":        int(acr.AccountData.Sequence),
 		"SigningPubKey":   pubKey,
 	}
+
+	// Sign the transaction
+	signedTx := utils.SignTx(sender_account, tx)
+
 	// Create a new websocket client to connect to the server
 	ws := websocket.NewWebsocketClient(&websocket.WebsocketConfig{
 		URL: ServerUrl,
 	})
-
-	// Encode the transaction for signing
-	encodedTx, _ := binarycodec.EncodeForSigning(tx)
-	fmt.Println("encodedTx:", encodedTx)
-
-	// Decode the encoded transaction to hexadecimal format
-	hexTx, _ := hex.DecodeString(encodedTx)
-	fmt.Println("hexTx:", hexTx)
-
-	// Sign the transaction using the private key
-	signature, _ := keypairs.Sign(string(hexTx), privKey)
-	fmt.Println("signature:", signature)
-
-	// Add the transaction signature to the transaction map
-	tx["TxnSignature"] = signature
-
-	// Encode the signed transaction
-	signedTx, err := binarycodec.Encode(tx)
-	if err != nil {
-		return
-	}
-	fmt.Println("signedTx:", signedTx)
 
 	// Send the signed transaction to the server for submission
 	res, _ := ws.SendRequest(
