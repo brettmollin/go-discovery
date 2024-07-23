@@ -37,10 +37,18 @@ func main() {
 	}
 	// Print the seeds for the sender and destination accounts
 	fmt.Println("seed for sender", sender_account["seed"].(string))
+	fmt.Println()
 	fmt.Println("seed for destination", destination_account["seed"].(string))
+	fmt.Println()
 
 	// Get the private and public keys from the seed
-	_, pubKey, _ := keypairs.DeriveKeypair(sender_account["seed"].(string), false)
+	prikey, pubKey, _ := keypairs.DeriveKeypair(sender_account["seed"].(string), false)
+	// Print the public key
+	fmt.Println("public key:", pubKey)
+	fmt.Println()
+	// Print the private key
+	fmt.Println("private key:", prikey)
+	fmt.Println()
 
 	// Get the distintion address
 	DestinationAddress := destination_account["account"].(map[string]interface{})["address"].(string)
@@ -58,6 +66,7 @@ func main() {
 	}
 	//print the transaction
 	fmt.Println(tx)
+	fmt.Println()
 	// Sign the transaction
 	signedTx := utils.SignTx(sender_account, tx)
 
@@ -67,5 +76,6 @@ func main() {
 		fmt.Println("Error submitting transaction:", err)
 		return
 	}
-	fmt.Println(result)
+	fmt.Printf("Tx Result: %s\n", result)
+
 }

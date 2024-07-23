@@ -1,6 +1,7 @@
 package utils
 
 import (
+	"encoding/json"
 	"fmt"
 
 	"github.com/xyield/xrpl-go/client/websocket"
@@ -21,7 +22,7 @@ func (SubmitRequest) Method() string {
 }
 
 // New function to submit transactions
-func SubmitTransaction(serverURL string, signedTx string) (string, error) {
+func SubmitTransaction(serverURL string, signedTx string) ([]byte, error) {
 	ws := websocket.NewWebsocketClient(&websocket.WebsocketConfig{
 		URL: serverURL,
 	})
@@ -32,7 +33,15 @@ func SubmitTransaction(serverURL string, signedTx string) (string, error) {
 		},
 	)
 	if err != nil {
-		return "", err
+		return []byte(""), err
 	}
-	return fmt.Sprintf("Tx Result: %v", res), nil
+	resJSON, err := json.MarshalIndent(res, "", "    ")
+	if err != nil {
+		// Handle error
+		fmt.Println("Error marshalling JSON:", err)
+		return []byte(""), err
+	}
+
+	return resJSON, nil
+
 }
